@@ -2,18 +2,6 @@
 const rateMap = new Map();
 
 export default async function handler(req, res) {
-  // 1. CORS - cuma boleh dari domain portfolio kamu
-  const allowedOrigins = [
-    "https://portofolio-ramzy-v2.vercel.app", // ← tanpa /yuki
-    "http://localhost:5173",
-    "http://localhost:3000",
-  ];
-  const origin = req.headers["origin"] || "";
-  if (!allowedOrigins.includes(origin)) {
-    // ← pakai .includes()
-    return res.status(403).json({ error: "Forbidden" });
-  }
-
   // 2. Method check
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
