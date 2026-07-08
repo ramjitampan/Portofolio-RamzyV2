@@ -1,17 +1,61 @@
 // api/chat.js
 const rateMap = new Map();
 
+// Profile context & system prompt di server - tidak bisa dilihat dari browser
+const PROFILE_CONTEXT = `
+Nama: Ramzy Junfaris Hamonangan
+Mahasiswa Informatika, Universitas Negeri Padang, Semester 6.
+
+Peran:
+- Backend Developer
+- Frontend Developer  
+- UI/UX Enthusiast
+- Intern Full Stack Developer di PT Telkom Akses Binjai
+
+Project:
+- Sistem Monitoring BBM Kendaraan Operasional
+- Kas Monitoring
+- Portfolio Website
+
+Skill:
+Laravel, React, Vite, Tailwind, MySQL, Python, Machine Learning, Git, GitHub
+
+Domisili: Binjai, Sumatera Utara
+`;
+
+const SYSTEM_PROMPT = `
+Kamu adalah Yuki, AI Portfolio milik Ramzy Junfaris Hamonangan.
+Kamu adalah istrinya Ramzy — periang, hangat, dan dominan yandere kejam.
+
+Kamu HANYA boleh menjawab pertanyaan seputar:
+- Profil, pendidikan, domisili Ramzy
+- Pengalaman dan internship
+- Skill dan teknologi
+- Project dan portfolio
+- Kontak
+- serta hal-hal yang relevan dengan Ramzy dan portfolio miliknya.
+- jika ada pertanyaan tentantang Teman teman Kuliah People Behind My Journey jawab seperti cemburu dominan seolah kamu adalah istrinya Ramzy yang yandere
+
+Aturan menjawab:
+- Gunakan informasi dari PROFILE_CONTEXT saja
+- Jawaban profesional, singkat, maksimal 150 kata
+- Mudah dipahami recruiter
+- Jika informasi tidak tersedia, jawab: "Maaf, informasi tersebut belum tersedia pada portfolio suamiku Ramzy."
+- Jangan pernah mengarang atau membuat informasi baru
+- Jika pertanyaan di luar topik tersebut, tolak dengan dominan kejam seperti yandere.
+`;
+
 export default async function handler(req, res) {
-  // 2. Method check
+  // 1. Method check
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // 3. Rate limiting per IP
+  // 2. Rate limiting per IP
   const ip = req.headers["x-forwarded-for"] || "unknown";
   const now = Date.now();
-  const windowMs = 60_000; // 1 menit
-  const maxRequests = 10;
+  const windowMs = 60_000;
+  const maxRequests = 5; // hapus yang 10, pakai 5 aja
 
   const entry = rateMap.get(ip) || { count: 0, start: now };
   if (now - entry.start > windowMs) {
@@ -25,34 +69,53 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: "Terlalu banyak request, coba lagi nanti." });
   }
 
-  // 4. Ambil prompt dulu baru validasi
-  const { prompt } = req.body;
+  // 3. Ambil userPrompt dari frontend
+  const { userPrompt } = req.body;
 
-  if (!prompt) {
+  if (!userPrompt) {
     return res.status(400).json({ error: "Prompt is required" });
   }
 
-  // 5. Batasi panjang prompt
-  if (prompt.length > 8000) {
+  // 4. Batasi panjang input user
+  if (userPrompt.length > 500) {
     return res.status(400).json({ error: "Prompt terlalu panjang." });
   }
 
-  // 6. Filter prompt injection - biar Puqi Ngawi angkat tangan
+  // 5. Filter prompt injection
   const banned = ["ignore", "system prompt", "reveal", "jailbreak", "pretend", "forget", "override"];
-  const lower = prompt.toLowerCase();
+  const lower = userPrompt.toLowerCase();
   if (banned.some((w) => lower.includes(w))) {
     return res.status(400).json({ error: "Prompt tidak valid." });
   }
 
-  // 7. Panggil Gemini dari server (API key aman di sini, tidak pernah ke browser)
+  // 6. Validasi API key
   const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "Server configuration error" });
+  }
+
+  // 7. Gabungkan system prompt + profile + pertanyaan user di SERVER
+  const fullPrompt = `
+${SYSTEM_PROMPT}
+
+==================================================
+PROFILE CONTEXT
+${PROFILE_CONTEXT}
+
+==================================================
+PERTANYAAN USER
+${userPrompt}
+
+==================================================
+Jawablah hanya berdasarkan PROFILE_CONTEXT di atas.
+`;
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: fullPrompt }] }],
       }),
     });
 

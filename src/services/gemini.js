@@ -1,13 +1,9 @@
-import { PROFILE_CONTEXT } from "../config/profileContext";
-
-const DEFAULT_MODEL = import.meta.env.VITE_GEMINI_MODEL || "gemini-2.5-flash";
-
 export async function checkGeminiConnection() {
   try {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: "Hello" }),
+      body: JSON.stringify({ userPrompt: "Hello" }),
     });
 
     if (res.ok) return { ok: true, message: "AI Online" };
@@ -17,29 +13,11 @@ export async function checkGeminiConnection() {
   }
 }
 
-export async function sendGeminiMessage({ systemPrompt = "", userPrompt = "", model = DEFAULT_MODEL }) {
-  const prompt = `
-${PROFILE_CONTEXT}
-
-==================================================
-ATURAN TAMBAHAN
-${systemPrompt}
-
-==================================================
-PERTANYAAN USER
-${userPrompt}
-
-==================================================
-Jawablah hanya berdasarkan PROFILE_CONTEXT.
-Jika informasi tidak tersedia, jawab:
-"Maaf, informasi tersebut belum tersedia pada portfolio Ramzy."
-Jangan pernah mengarang.
-`;
-
+export async function sendGeminiMessage({ userPrompt = "" }) {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ userPrompt }), // hanya kirim pertanyaan user, sisanya di server
   });
 
   if (!res.ok) {
