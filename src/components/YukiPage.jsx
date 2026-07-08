@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send } from "lucide-react";
-import { sendMessage, checkConnection } from "../services/aiService";
+import { sendGeminiMessage as sendMessage, checkGeminiConnection as checkConnection } from "../services/gemini";
 
 const QUICK = {
   about: "Ceritakan tentang Ramzy",
@@ -177,7 +177,7 @@ export default function PageYuki({ provider = "gemini" }) {
           <h1 className="font-display text-2xl md:text-3xl font-bold text-white mt-3">
             Hai, aku <span className="shimmer-text">Yuki</span> ^o^
           </h1>
-          <p className="font-body text-sm text-white/55 mt-1">Istri Ramzy yang memberikan info te — tanya apa aja soal profil dan portofolionya.</p>
+          <p className="font-body text-sm text-white/55 mt-1">Istri Ramzy yang memberikan info apa aja soal profil dan portofolionya.</p>
           <span className="font-body text-xs mt-2 flex items-center gap-1.5 text-white/40">
             <span className={`w-2 h-2 rounded-full ${status.ok === true ? "bg-emerald-400" : status.ok === false ? "bg-red-400" : "bg-white/30"}`} />
             {status.msg}
