@@ -44,7 +44,7 @@ if (!allowedOrigins.includes(origin)) {  // ← pakai .includes()
   }
 
   // 5. Batasi panjang prompt
-  if (prompt.length > 500) {
+  if (prompt.length > 8000) {
     return res.status(400).json({ error: "Prompt terlalu panjang." });
   }
 
