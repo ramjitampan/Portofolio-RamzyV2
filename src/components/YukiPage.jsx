@@ -147,7 +147,7 @@ export default function PageYuki({ provider = "gemini" }) {
     setInput("");
     setLoading(true);
     try {
-      const res = await sendMessage({ provider, message: prompt });
+      const res = await sendMessage({ userPrompt: prompt });
       pushMessage("assistant", res.output || "Tidak ada respon.");
     } catch (err) {
       console.error(err);
